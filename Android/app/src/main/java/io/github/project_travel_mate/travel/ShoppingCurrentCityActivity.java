@@ -8,7 +8,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -18,6 +17,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -57,6 +57,10 @@ public class ShoppingCurrentCityActivity extends AppCompatActivity {
     TextView textView;
     @BindView(R.id.animation_view)
     LottieAnimationView animationView;
+    @BindView(R.id.layout)
+    LinearLayout layout;
+    @BindView(R.id.show_city_name)
+    TextView showCityName;
 
     private MaterialSearchView mSearchView;
     private String mToken;
@@ -159,7 +163,8 @@ public class ShoppingCurrentCityActivity extends AppCompatActivity {
     }
 
     private void getShoppingItems(final String item) {
-
+        showCityName.setText(String.format(getString(R.string.showing_shopping_item), item));
+        showCityName.setVisibility(View.VISIBLE);
         String uri = API_LINK_V2 + "get-shopping-info/" + item;
         uri = uri.replace(" ", "+");
 
@@ -195,6 +200,7 @@ public class ShoppingCurrentCityActivity extends AppCompatActivity {
                                 Utils.hideKeyboard(ShoppingCurrentCityActivity.this);
                             }
                             animationView.setVisibility(View.GONE);
+                            layout.setVisibility(View.VISIBLE);
                             textView.setVisibility(View.GONE);
                             lv.setAdapter(new ShoppingAdapter(ShoppingCurrentCityActivity.this, feedItems));
                         } catch (JSONException | IOException e) {
@@ -202,7 +208,7 @@ public class ShoppingCurrentCityActivity extends AppCompatActivity {
                             networkError();
                         }
                     } else {
-                        networkError();
+                        noResults();
                     }
                 });
             }
@@ -217,6 +223,9 @@ public class ShoppingCurrentCityActivity extends AppCompatActivity {
      * Plays the network lost animation in the view
      */
     private void networkError() {
+        showCityName.setVisibility(View.GONE);
+        animationView.setVisibility(View.VISIBLE);
+        layout.setVisibility(View.GONE);
         animationView.setAnimation(R.raw.network_lost);
         animationView.playAnimation();
     }
@@ -224,6 +233,8 @@ public class ShoppingCurrentCityActivity extends AppCompatActivity {
      * Plays the no results animation in the view
      */
     private void noResults() {
+        animationView.setVisibility(View.VISIBLE);
+        layout.setVisibility(View.GONE);
         Toast.makeText(ShoppingCurrentCityActivity.this,  R.string.no_results, Toast.LENGTH_LONG).show();
         animationView.setAnimation(R.raw.empty_list);
         animationView.playAnimation();

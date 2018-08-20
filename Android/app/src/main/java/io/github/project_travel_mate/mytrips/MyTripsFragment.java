@@ -17,12 +17,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
+
 import com.airbnb.lottie.LottieAnimationView;
+
 import org.json.JSONArray;
 import org.json.JSONException;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -52,7 +56,7 @@ public class MyTripsFragment extends Fragment implements SwipeRefreshLayout.OnRe
     private String mToken;
     private Handler mHandler;
     private Activity mActivity;
-    private MyTripsAdapter mMyTripsAdapter;
+    private TripsListAdapter mMyTripsAdapter;
     static int ADDNEWTRIP_ACTIVITY = 203;
     private View mTripsView;
 
@@ -123,11 +127,10 @@ public class MyTripsFragment extends Fragment implements SwipeRefreshLayout.OnRe
                                 String end = arr.getJSONObject(i).optString("end_date", null);
                                 String name = arr.getJSONObject(i).getJSONObject("city").getString("city_name");
                                 String tname = arr.getJSONObject(i).getString("trip_name");
-                                JSONArray array = arr.getJSONObject(i).getJSONObject("city").getJSONArray("images");
-                                String image = array.length() > 0 ? array.getString(0) : null;
+                                String image = arr.getJSONObject(i).getJSONObject("city").getString("image");
                                 mTrips.add(new Trip(id, name, image, start, end, tname));
                                 animationView.setVisibility(View.GONE);
-                                mMyTripsAdapter = new MyTripsAdapter(mActivity.getApplicationContext(), mTrips);
+                                mMyTripsAdapter = new TripsListAdapter(mActivity.getApplicationContext(), mTrips);
                                 gridView.setAdapter(mMyTripsAdapter);
                             }
                         } catch (JSONException | IOException | NullPointerException e) {
@@ -183,7 +186,12 @@ public class MyTripsFragment extends Fragment implements SwipeRefreshLayout.OnRe
             mytrip();
         }
     }
-
+    @Override
+    public void onResume() {
+        super.onResume();
+        mTrips.clear();
+        mytrip();
+    }
 
     @Override
     public void onRefresh() {

@@ -1,6 +1,7 @@
 package io.github.project_travel_mate.mytrips;
 
 import android.app.Activity;
+import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,28 +14,31 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.airbnb.lottie.LottieAnimationView;
 import com.dd.processbutton.FlatButton;
-import com.fourmob.datetimepicker.date.DatePickerDialog;
-import com.sleepbot.datetimepicker.time.RadialPickerLayout;
-import com.sleepbot.datetimepicker.time.TimePickerDialog;
+
 import org.json.JSONArray;
 import org.json.JSONException;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Objects;
+
 import javax.net.ssl.HttpsURLConnection;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.github.project_travel_mate.R;
 import io.github.project_travel_mate.searchcitydialog.CitySearchDialogCompat;
 import io.github.project_travel_mate.searchcitydialog.CitySearchModel;
-import ir.mirrajabi.searchdialog.core.BaseSearchDialogCompat;
 import ir.mirrajabi.searchdialog.core.SearchResultListener;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -45,6 +49,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import utils.TravelmateSnackbars;
 import utils.Utils;
+
 import static utils.Constants.API_LINK_V2;
 import static utils.Constants.USER_TOKEN;
 
@@ -52,28 +57,22 @@ import static utils.Constants.USER_TOKEN;
  * Activity to add new trip
  */
 public class AddNewTripActivity extends AppCompatActivity implements DatePickerDialog.OnDateSetListener,
-        TimePickerDialog.OnTimeSetListener,
         View.OnClickListener, TravelmateSnackbars {
 
     private static final String DATEPICKER_TAG1 = "datepicker1";
     @BindView(R.id.select_city_name)
-    FlatButton cityName;
+    TextView cityName;
     @BindView(R.id.sdate)
-    FlatButton tripStartDate;
+    TextView tripStartDate;
     @BindView(R.id.ok)
     FlatButton ok;
     @BindView(R.id.tname)
     EditText tripName;
     @BindView(R.id.linear_layout)
     LinearLayout mLinearLayout;
-    @BindView(R.id.trip_date)
-    TextView tripdate;
-    @BindView(R.id.trip_date_text)
-    TextView tripdateText;
-    @BindView(R.id.trip_city_text)
-    TextView tripcityText;
-    @BindView(R.id.trip_city)
-    TextView tripcity;
+    @BindView(R.id.animation_view)
+    LottieAnimationView animationView;
+
     private String mCityid;
     private String mStartdate;
     private String mTripname;
@@ -89,22 +88,19 @@ public class AddNewTripActivity extends AppCompatActivity implements DatePickerD
         setContentView(R.layout.activity_add_new_trip);
 
         ButterKnife.bind(this);
-      
-        tripdateText.setVisibility(View.INVISIBLE);
-        tripdate.setVisibility(View.INVISIBLE);
-        tripcity.setVisibility(View.INVISIBLE);
-        tripcityText.setVisibility(View.INVISIBLE);
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         mHandler = new Handler(Looper.getMainLooper());
         mToken = sharedPreferences.getString(USER_TOKEN, null);
 
         final Calendar calendar = Calendar.getInstance();
-        mDatePickerDialog = DatePickerDialog.newInstance(this,
+
+        mDatePickerDialog = new DatePickerDialog(
+                AddNewTripActivity.this,
+                AddNewTripActivity.this,
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH),
-                isVibrate());
+                calendar.get(Calendar.DAY_OF_MONTH));
 
         fetchCitiesList();
 
@@ -115,22 +111,7 @@ public class AddNewTripActivity extends AppCompatActivity implements DatePickerD
         Objects.requireNonNull(getSupportActionBar()).setHomeButtonEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
-
-    @Override
-    public void onDateSet(DatePickerDialog datePickerDialog, int year, int month, int day) {
-        if (Objects.equals(datePickerDialog.getTag(), DATEPICKER_TAG1)) {
-            Calendar calendar = new GregorianCalendar(year, month, day);
-            mStartdate = Long.toString(calendar.getTimeInMillis() / 1000);
-            tripdate.setText(day + "/" + month + "/" + year);
-            tripdateText.setVisibility(View.VISIBLE);
-            tripdate.setVisibility(View.VISIBLE);
-        }
-    }
-
-    @Override
-    public void onTimeSet(RadialPickerLayout view, int hourOfDay, int minute) {
-    }
-
+          
     /**
      * Calls API to add  new trip
      */
@@ -168,7 +149,10 @@ public class AddNewTripActivity extends AppCompatActivity implements DatePickerD
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                Log.e("Request Failed", "Message : " + e.getMessage());
+                mHandler.post(() -> {
+                    mDialog.dismiss();
+                    networkError();
+                });
             }
 
             @Override
@@ -193,6 +177,8 @@ public class AddNewTripActivity extends AppCompatActivity implements DatePickerD
 
                 } catch (IOException e) {
                     e.printStackTrace();
+                    networkError();
+                    mDialog.dismiss();
                 }
                 mDialog.dismiss();
 
@@ -249,14 +235,6 @@ public class AddNewTripActivity extends AppCompatActivity implements DatePickerD
 
     }
 
-    private boolean isVibrate() {
-        return false;
-    }
-
-    private boolean isCloseOnSingleTapDay() {
-        return false;
-    }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home)
@@ -269,10 +247,7 @@ public class AddNewTripActivity extends AppCompatActivity implements DatePickerD
         switch (view.getId()) {
             // Set Start date
             case R.id.sdate:
-                mDatePickerDialog.setVibrate(isVibrate());
-                mDatePickerDialog.setYearRange(1985, 2028);
-                mDatePickerDialog.setCloseOnSingleTapDay(isCloseOnSingleTapDay());
-                mDatePickerDialog.show(getSupportFragmentManager(), DATEPICKER_TAG1);
+                mDatePickerDialog.show();
                 break;
             // Add a new trip
             case R.id.ok:
@@ -295,16 +270,10 @@ public class AddNewTripActivity extends AppCompatActivity implements DatePickerD
             case R.id.select_city_name :
                 new CitySearchDialogCompat(AddNewTripActivity.this, getString(R.string.search_title),
                         getString(R.string.search_hint), null, mSearchCities,
-                        new SearchResultListener<CitySearchModel>() {
-                            @Override
-                            public void onSelected(BaseSearchDialogCompat dialog,
-                                                   CitySearchModel item, int position) {
-                                mCityid = item.getId();
-                                tripcity.setText(item.getTitle().toString());
-                                tripcity.setVisibility(View.VISIBLE);
-                                tripcityText.setVisibility(View.VISIBLE);
-                                dialog.dismiss();
-                            }
+                        (SearchResultListener<CitySearchModel>) (dialog, item, position) -> {
+                            mCityid = item.getId();
+                            cityName.setText(item.getTitle());
+                            dialog.dismiss();
                         }).show();
                 break;
 
@@ -314,5 +283,23 @@ public class AddNewTripActivity extends AppCompatActivity implements DatePickerD
     public static Intent getStartIntent(Context context) {
         Intent intent = new Intent(context, AddNewTripActivity.class);
         return intent;
+    }
+
+    /**
+     * Plays the network lost animation in the view
+     */
+    private void networkError() {
+        mLinearLayout.setVisibility(View.INVISIBLE);
+        animationView.setVisibility(View.VISIBLE);
+        animationView.setAnimation(R.raw.network_lost);
+        animationView.playAnimation();
+    }
+
+    @Override
+    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+        Calendar calendar = new GregorianCalendar(year, month, dayOfMonth);
+        Log.d("Month", String.valueOf(month));
+        mStartdate = Long.toString(calendar.getTimeInMillis() / 1000);
+        tripStartDate.setText(dayOfMonth + "/" + (month + 1) + "/" + year);
     }
 }

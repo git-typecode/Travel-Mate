@@ -1,11 +1,8 @@
 package io.github.project_travel_mate.destinations;
 
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Typeface;
-import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -24,20 +21,18 @@ import flipviewpager.utils.FlipSettings;
 import io.github.project_travel_mate.R;
 import io.github.project_travel_mate.destinations.description.FinalCityInfoActivity;
 import io.github.project_travel_mate.destinations.description.TweetsActivity;
+import io.github.project_travel_mate.destinations.description.WeatherActivity;
 import io.github.project_travel_mate.destinations.funfacts.FunFactsActivity;
 import objects.City;
 
 class CityAdapter extends BaseFlipAdapter<City> {
 
     private final Activity mContext;
-    private final Typeface mTypefaceTex;
     private final int[] mIdsInterest = {R.id.interest_1, R.id.interest_2, R.id.interest_3, R.id.interest_4};
-
 
     CityAdapter(Context context, List<City> items, FlipSettings settings) {
         super(context, items, settings);
         this.mContext = (Activity) context;
-        mTypefaceTex = Typeface.createFromAsset(context.getAssets(), "fonts/texgyreadventor-bold.otf");
     }
 
     @Override
@@ -64,12 +59,10 @@ class CityAdapter extends BaseFlipAdapter<City> {
                         load(city1.getAvatar()).
                         placeholder(R.drawable.placeholder_image).
                         into(holder.leftAvatar);
-                holder.left.setTypeface(mTypefaceTex);
                 holder.left.setText(city1.getNickname());
 
                 if (city2 != null) {
                     holder.right.setText(city2.getNickname());
-                    holder.right.setTypeface(mTypefaceTex);
                     Picasso.with(mContext).
                             load(city2.getAvatar()).
                             placeholder(R.drawable.placeholder_image).
@@ -96,7 +89,7 @@ class CityAdapter extends BaseFlipAdapter<City> {
         Iterator<String> iInterests = city.getInterests().iterator();
         while (iViews.hasNext() && iInterests.hasNext())
             iViews.next().setText(iInterests.next());
-        holder.infoPage.setBackgroundColor(mContext.getResources().getColor(getRandomColor()));
+        holder.infoPage.setBackgroundColor(mContext.getResources().getColor(city.getBackgroundColor()));
         infoHolder.nickName.setText(city.getNickname());
 
         infoHolder.nickName.setOnClickListener(v -> {
@@ -119,10 +112,8 @@ class CityAdapter extends BaseFlipAdapter<City> {
         });
 
         infoHolder.fv2.setOnClickListener(v -> {
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/?ie=UTF8&hq=&ll=" +
-                    city.getLatitude() + "," + city.getLongitude() +
-                    "&z=13")); // zoom level
-            mContext.startActivity(browserIntent);
+            Intent intent = WeatherActivity.getStartIntent(mContext, city, null);
+            mContext.startActivity(intent);
         });
 
         infoHolder.fv4.setOnClickListener(v -> {
@@ -164,41 +155,5 @@ class CityAdapter extends BaseFlipAdapter<City> {
         CitiesInfoHolder(View view) {
             ButterKnife.bind(this, view);
         }
-    }
-
-    private int getRandomColor() {
-        double random = Math.random();
-        int randomNum8 = (int) (random * 100) % 8;
-        int color;
-        switch (randomNum8) {
-            case 0:
-                color = R.color.sienna;
-                break;
-            case 1:
-                color = R.color.saffron;
-                break;
-            case 2:
-                color = R.color.green;
-                break;
-            case 3:
-                color = R.color.pink;
-                break;
-            case 4:
-                color = R.color.orange;
-                break;
-            case 5:
-                color = R.color.saffron;
-                break;
-            case 6:
-                color = R.color.purple;
-                break;
-            case 7:
-                color = R.color.blue;
-                break;
-            default:
-                color = R.color.blue;
-                break;
-        }
-        return color;
     }
 }

@@ -17,14 +17,22 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
+
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.airbnb.lottie.LottieAnimationView;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Objects;
+import java.util.TimeZone;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.github.project_travel_mate.R;
@@ -39,6 +47,7 @@ import okhttp3.Response;
 import utils.TravelmateSnackbars;
 
 import static utils.Constants.API_LINK_V2;
+import static utils.Constants.READ_NOTIF_STATUS;
 import static utils.Constants.USER_TOKEN;
 
 public class NotificationsActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener,
@@ -53,12 +62,18 @@ public class NotificationsActivity extends AppCompatActivity implements SwipeRef
 
     private String mToken;
     private Handler mHandler;
-    private SharedPreferences mSharedPreferences;
     ArrayList<Notification> notifications;
     private NotificationsAdapter mAdapter;
     private MaterialDialog mDialog;
     private Menu mOptionsMenu;
     boolean allRead = false;
+    private static final int SECOND_MILLIS = 1000;
+    private static final int MINUTE_MILLIS = 60 * SECOND_MILLIS;
+    private static final int HOUR_MILLIS = 60 * MINUTE_MILLIS;
+    private static final long DAY_MILLIS = 24 * HOUR_MILLIS;
+    private static final long MONTH_MILLIS = 30 * DAY_MILLIS;
+    private static final long YEAR_MILLIS = 12 * MONTH_MILLIS;
+    private boolean mShowReadNotif;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,8 +81,9 @@ public class NotificationsActivity extends AppCompatActivity implements SwipeRef
         setContentView(R.layout.activity_notifications);
         ButterKnife.bind(this);
         mHandler = new Handler(Looper.getMainLooper());
-        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         mToken = mSharedPreferences.getString(USER_TOKEN, null);
+        mShowReadNotif = mSharedPreferences.getBoolean(READ_NOTIF_STATUS, true);
         notifications = new ArrayList<>();
         swipeRefreshLayout.setOnRefreshListener(this);
         getNotifications();
@@ -117,9 +133,21 @@ public class NotificationsActivity extends AppCompatActivity implements SwipeRef
                                     String type = array.getJSONObject(i).getString("notification_type");
                                     String text = array.getJSONObject(i).getString("text");
                                     boolean read = array.getJSONObject(i).getBoolean("is_read");
-                                    if (read == false) {
+                                    SimpleDateFormat dateFormat =
+                                            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'");
+                                    dateFormat.setTimeZone(TimeZone.getTimeZone("IST"));
+                                    Date date = null;
+                                    try {
+                                        date = dateFormat.parse(array
+                                                .getJSONObject(i).getString("created_at"));
+                                    } catch (ParseException e) {
+                                        e.printStackTrace();
+                                    }
+                                    String createdAt = getTimeAgo(date.getTime());
+                                    if (!read) {
                                         allRead = true;
                                     }
+
                                     JSONObject object = array.getJSONObject(i).getJSONObject("initiator_user");
                                     String userName = object.getString("username");
                                     String firstName = object.getString("first_name");
@@ -130,7 +158,7 @@ public class NotificationsActivity extends AppCompatActivity implements SwipeRef
                                     String status = object.getString("status");
                                     User user =
                                             new User(userName, firstName, lastName, ids, imageURL, dateJoined, status);
-                                    if ( array.getJSONObject(i).getString("trip") != "null" &&
+                                    if (!Objects.equals(array.getJSONObject(i).getString("trip"), "null") &&
                                             array.getJSONObject(i).getString("notification_type").equals("Trip")) {
 
                                         JSONObject obj = array.getJSONObject(i).getJSONObject("trip");
@@ -141,19 +169,31 @@ public class NotificationsActivity extends AppCompatActivity implements SwipeRef
                                         String start = obj.getString("start_date_tx");
                                         String tname = obj.getString("trip_name");
                                         Trip trip = new Trip(tripId, name, image, start, "", tname);
-                                        notifications.add(new Notification(id, type, text, read, user, trip));
+                                        //add only if notif is unread and
+                                        //showReadNotif is true
+                                        if (!read || mShowReadNotif) {
+                                            notifications.add(new Notification(id, type, text, read, user,
+                                                    trip, createdAt));
+                                        }
                                     } else {
                                         Trip trip = new Trip("", "", "", "", "", "");
-                                        notifications.add(new Notification(id, type, text, read, user, trip));
+                                        if (!read || mShowReadNotif) {
+                                            notifications.add(new Notification(id, type, text, read, user,
+                                                    trip, createdAt));
+                                        }
                                     }
                                 }
-                                mAdapter = new NotificationsAdapter(NotificationsActivity.this, notifications);
-                                listView.setAdapter(mAdapter);
-                                if (allRead == false) {
+                                if (!notifications.isEmpty()) {
+                                    mAdapter = new NotificationsAdapter(NotificationsActivity.this, notifications);
+                                    listView.setAdapter(mAdapter);
+                                    animationView.setVisibility(View.GONE);
+                                } else {
+                                    emptyList();
+                                }
+                                if (!allRead) {
                                     MenuItem item = mOptionsMenu.findItem(R.id.action_sort);
                                     item.setVisible(false);
                                 }
-                                animationView.setVisibility(View.GONE);
                             }
 
                         } catch (JSONException e) {
@@ -200,6 +240,41 @@ public class NotificationsActivity extends AppCompatActivity implements SwipeRef
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+    public static String getTimeAgo(long time) {
+        long now = new Date().getTime();
+        if (time > now || time <= 0) {
+            return null;
+        }
+        final long diff = now - time;
+        if (diff < MINUTE_MILLIS) {
+            return "Just now";
+        } else if (diff < 2 * MINUTE_MILLIS) {
+            return "a minute ago";
+        } else if (diff < 50 * MINUTE_MILLIS) {
+            return diff / MINUTE_MILLIS + " minutes ago";
+        } else if (diff < 90 * MINUTE_MILLIS) {
+            return "an hour ago";
+        } else if (diff < DAY_MILLIS) {
+            return diff / HOUR_MILLIS + " hours ago";
+        } else if (diff < 48 * HOUR_MILLIS) {
+            return "yesterday";
+        } else if (diff < MONTH_MILLIS) {
+            return diff / DAY_MILLIS + " days ago";
+        } else if (diff < YEAR_MILLIS) {
+            if (diff / MONTH_MILLIS == 1) {
+                return "1 month ago";
+            } else {
+                return diff / MONTH_MILLIS + " months ago";
+            }
+        } else if (diff < 12 * YEAR_MILLIS) {
+            if (diff / YEAR_MILLIS == 1) {
+                return "1 year ago";
+            } else {
+                return diff / MONTH_MILLIS + " years ago";
+            }
+        }
+        return null;
     }
 
     private void markAllAsRead() {

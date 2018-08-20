@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -17,9 +16,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.airbnb.lottie.LottieAnimationView;
@@ -27,6 +27,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Objects;
 import butterknife.BindView;
@@ -34,7 +35,6 @@ import butterknife.ButterKnife;
 import io.github.project_travel_mate.R;
 import io.github.project_travel_mate.searchcitydialog.CitySearchDialogCompat;
 import io.github.project_travel_mate.searchcitydialog.CitySearchModel;
-import ir.mirrajabi.searchdialog.core.BaseSearchDialogCompat;
 import ir.mirrajabi.searchdialog.core.SearchResultListener;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -43,9 +43,6 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import static utils.Constants.API_LINK_V2;
-import static utils.Constants.HERE_API_APP_CODE;
-import static utils.Constants.HERE_API_APP_ID;
-import static utils.Constants.HERE_API_LINK;
 import static utils.Constants.USER_TOKEN;
 
 /**
@@ -53,14 +50,16 @@ import static utils.Constants.USER_TOKEN;
  */
 public class HotelsActivity extends AppCompatActivity implements View.OnClickListener {
 
-    @BindView(R.id.pb)
-    ProgressBar pb;
     @BindView(R.id.hotel_list)
-    ListView lv;
+    GridView gridView;
     @BindView(R.id.select_city)
     TextView selectCity;
     @BindView(R.id.animation_view)
     LottieAnimationView animationView;
+    @BindView(R.id.text_view)
+    TextView textView;
+    @BindView(R.id.layout)
+    LinearLayout layout;
 
     private Handler mHandler;
     private String mToken;
@@ -103,9 +102,7 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
      */
     private void getHotelList(String latitude, String longitude) {
 
-        pb.setVisibility(View.VISIBLE);
-        String uri = HERE_API_LINK + "?at=" + latitude + "," + longitude + "&cat=accommodation&app_id=" +
-                HERE_API_APP_ID + "&app_code=" + HERE_API_APP_CODE;
+        String uri = API_LINK_V2 + "get-places/" + latitude + "/" + longitude + "/accommodation";
 
         Log.v("EXECUTING", uri);
 
@@ -113,6 +110,7 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
         OkHttpClient client = new OkHttpClient();
         //Execute request
         Request request = new Request.Builder()
+                .header("Authorization", "Token " + mToken)
                 .url(uri)
                 .build();
         //Setup callback
@@ -120,7 +118,6 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
             @Override
             public void onFailure(Call call, IOException e) {
                 Log.e("Request Failed", "Message : " + e.getMessage());
-                pb.setVisibility(View.GONE);
                 mHandler.post(() -> networkError());
             }
 
@@ -131,24 +128,21 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
                 mHandler.post(() -> {
                     if (response.isSuccessful() && response.body() != null) {
                         try {
-                            JSONObject json = new JSONObject(res);
-                            Log.v("Response", res);
-                            json = json.getJSONObject("results");
-                            JSONArray feedItems = json.getJSONArray("items");
+                            JSONArray feedItems = new JSONArray(res);
                             Log.v("response", feedItems + " ");
-                            pb.setVisibility(View.GONE);
+                            layout.setVisibility(View.VISIBLE);
+                            animationView.setVisibility(View.GONE);
+                            textView.setVisibility(View.GONE);
                             if (feedItems.length() > 0) {
-                                lv.setAdapter(new HotelsAdapter(HotelsActivity.this, feedItems));
+                                gridView.setAdapter(new HotelsAdapter(HotelsActivity.this, feedItems));
                             } else {
                                 noResults();
                             }
                         } catch (JSONException e1) {
                             e1.printStackTrace();
-                            pb.setVisibility(View.GONE);
                             networkError();
                         }
                     } else {
-                        pb.setVisibility(View.GONE);
                         networkError();
                     }
                 });
@@ -202,7 +196,6 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
                         Log.e("ERROR", "Network error");
                         networkError();
                     }
-                    pb.setVisibility(View.GONE);
                 });
             }
         });
@@ -216,7 +209,7 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
      */
     public void getCityInfo(String cityId) {
 
-        pb.setVisibility(View.VISIBLE);
+        animationView.setVisibility(View.VISIBLE);
 
         String uri = API_LINK_V2 + "get-city/" + cityId;
         Log.v("EXECUTING", uri);
@@ -265,6 +258,7 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
                             dialog.dismiss();
                             getCityInfo(selectedCity);
                         }).show();
+                gridView.setAdapter(null);
                 break;
         }
     }
@@ -318,8 +312,10 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
 
             try {
                 holder.title.setText(mFeedItems.getJSONObject(position).getString("title"));
-                holder.description.setText(mFeedItems.getJSONObject(position).getString("vicinity"));
-
+                holder.description.setText(android.text.Html.fromHtml(mFeedItems
+                        .getJSONObject(position).getString("address")).toString());
+                holder.distance.setText(new DecimalFormat("##.##").format((float) mFeedItems
+                        .getJSONObject(position).getInt("distance") / 1000));
                 holder.call.setOnClickListener(view -> {
                     Intent intent = new Intent(Intent.ACTION_DIAL);
                     try {
@@ -334,10 +330,10 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
                 holder.map.setOnClickListener(view -> {
                     Intent browserIntent;
                     try {
-                        Double latitude = Double.parseDouble(
-                                mFeedItems.getJSONObject(position).getJSONArray("position").get(0).toString());
-                        Double longitude = Double.parseDouble(
-                                mFeedItems.getJSONObject(position).getJSONArray("position").get(1).toString());
+                        Double latitude =
+                                mFeedItems.getJSONObject(position).getDouble("latitude");
+                        Double longitude =
+                                mFeedItems.getJSONObject(position).getDouble("longitude");
 
                         browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps?q=" +
                                 mFeedItems.getJSONObject(position).getString("title") +
@@ -363,6 +359,24 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
                     mContext.startActivity(browserIntent);
 
                 });
+                holder.expandText.setOnClickListener((View view) -> {
+                    if (holder.detailsLayout.getVisibility() == View.GONE) {
+                        holder.detailsLayout.setVisibility(View.VISIBLE);
+                        holder.expandCollapse.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
+                    } else {
+                        holder.detailsLayout.setVisibility(View.GONE);
+                        holder.expandCollapse.setImageResource(R.drawable.ic_keyboard_arrow_down_black_24dp);
+                    }
+                });
+                holder.expandCollapse.setOnClickListener((View view) -> {
+                    if (holder.detailsLayout.getVisibility() == View.GONE) {
+                        holder.detailsLayout.setVisibility(View.VISIBLE);
+                        holder.expandCollapse.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
+                    } else {
+                        holder.detailsLayout.setVisibility(View.GONE);
+                        holder.expandCollapse.setImageResource(R.drawable.ic_keyboard_arrow_down_black_24dp);
+                    }
+                });
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -376,7 +390,8 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
      * Plays the network lost animation in the view
      */
     private void networkError() {
-        pb.setVisibility(View.GONE);
+        layout.setVisibility(View.GONE);
+        animationView.setVisibility(View.VISIBLE);
         animationView.setAnimation(R.raw.network_lost);
         animationView.playAnimation();
     }
@@ -385,6 +400,8 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
      * Plays the no results animation in the view
      */
     private void noResults() {
+        layout.setVisibility(View.GONE);
+        animationView.setVisibility(View.VISIBLE);
         Toast.makeText(HotelsActivity.this, R.string.no_trips, Toast.LENGTH_LONG).show();
         animationView.setAnimation(R.raw.empty_list);
         animationView.playAnimation();
@@ -396,12 +413,19 @@ public class HotelsActivity extends AppCompatActivity implements View.OnClickLis
         @BindView(R.id.hotel_address)
         TextView description;
         @BindView(R.id.call)
-        LinearLayout call;
+        RelativeLayout call;
         @BindView(R.id.map)
-        LinearLayout map;
+        RelativeLayout map;
         @BindView(R.id.book)
-        LinearLayout book;
-
+        RelativeLayout book;
+        @BindView(R.id.more_details)
+        LinearLayout detailsLayout;
+        @BindView(R.id.expand_text_view)
+        TextView expandText;
+        @BindView(R.id.expand_collapse)
+        ImageView expandCollapse;
+        @BindView(R.id.distance)
+        TextView distance;
         ViewHolder(View view) {
             ButterKnife.bind(this, view);
         }

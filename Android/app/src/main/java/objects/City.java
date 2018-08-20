@@ -18,37 +18,27 @@ public class City implements Serializable {
     private String mLatitude;
     private String mLongitude;
     private int mFunFactsCount;
+    private int mBackgroundColor;
 
-    /**
-     * Instantiates city object
-     *
-     * @param id          unique id for a city
-     * @param avatar      city image
-     * @param nickname    city name
-     * @param description city description
-     * @param lat         latitude of city
-     * @param lon         longitude of city
-     * @param funFactsCount count of fun facts for the city
-     * @param interest    list of items when string is opened
-     */
-    public City(String id, String avatar, String nickname, String description,
-                String lat, String lon,  int funFactsCount, String... interest) {
-        this.mAvatar = avatar;
-        this.mId = id;
-        this.mLatitude = lat;
-        this.mLongitude = lon;
-        this.mNickname = nickname;
-        this.mDescription = description;
-        this.mFunFactsCount = funFactsCount;
-        mInterests.addAll(Arrays.asList(interest));
-    }
 
-    public City(String mId, String mAvatar, String mNickname, int funFactsCount, String... interest) {
+    public City(String mId, String mAvatar, String mNickname, int funFactsCount, int color, String... interest) {
         this.mAvatar = mAvatar;
         this.mNickname = mNickname;
         this.mId = mId;
         this.mFunFactsCount = funFactsCount;
+        this.mBackgroundColor = color;
         mInterests.addAll(Arrays.asList(interest));
+    }
+
+    public City(String nickname, String id) {
+        this.mNickname = nickname;
+        this.mId = id;
+    }
+
+    public City(String id, String nickname, String avatar) {
+        this.mId = id;
+        this.mNickname = nickname;
+        this.mAvatar = avatar;
     }
 
     public String getAvatar() {
@@ -93,5 +83,13 @@ public class City implements Serializable {
 
     public void setLongitude(String mLongitude) {
         this.mLongitude = mLongitude;
+    }
+
+    public int getBackgroundColor() {
+        return mBackgroundColor;
+    }
+
+    public void setBackgroundColor(int mBackgroundColor) {
+        this.mBackgroundColor = mBackgroundColor;
     }
 }

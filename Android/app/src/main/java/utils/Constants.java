@@ -16,16 +16,13 @@ public class Constants {
     public static final String USER_IMAGE = "user_image";
     public static final String USER_ID = "user_id";
     public static final String OTHER_USER_ID = "other_user_id";
+    public static final String READ_NOTIF_STATUS = "read_notificatons_status";
 
     public static final String EVENT_IMG = "event_name";
     public static final String EVENT_NAME = "event_img";
     public static final String IMAGE_NO = "number";
 
-    public static final String DESTINATION_CITY_LAT = "destination_city_lat";
-    public static final String DESTINATION_CITY_LON = "destination_city_lon";
-
     public static final String API_LINK_V2 = "https://project-travel-mate.herokuapp.com/api/";
-    public static final String maps_key = "AIzaSyBgktirlOODUO9zWD-808D7zycmP7smp-Y";
 
     // TODO:: replace placeholders with actual values
     //Cloudinary information
@@ -52,11 +49,14 @@ public class Constants {
     public static final String EXTRA_MESSAGE_FUNFACT_OBJECT = "funfactobject_";
     public static final String EXTRA_MESSAGE_TRIP_OBJECT = "tripobject_";
     public static final String EXTRA_MESSAGE_FRIEND_ID = "tripfriendid_";
+    public static final String EXTRA_MESSAGE_IMAGE_URI = "profileimageuri_";
+    public static final String EXTRA_MESSAGE_USER_FULLNAME = "userfullname_";
+    public static final String EXTRA_MESSAGE_CITY_NAME = "citynickname_";
+    public static final String EXTRA_MESSAGE_CITY_ID = "cityid_";
+    public static final String EXTRA_MESSAGE_CALLED_FROM_UTILITIES = "iscalledfromutilties_";
+    public static final String EXTRA_MESSAGE_HASHTAG_NAME = "hashtagname_";
 
     // Here API
-    public static final String HERE_API_LINK = "https://places.api.here.com/places/v1/discover/explore";
-    public static final String HERE_API_APP_ID = "7xQMJiIPsG3ptIohUobu";
-    public static final String HERE_API_APP_CODE = "iPNVovxnQdkSvsRPjPct3w";
     public static final List<String> HERE_API_MODES = new ArrayList<String>() {
         {
             add("eat-drink");
@@ -78,4 +78,7 @@ public class Constants {
     public static final int QR_CODE_WIDTH = 200;
     public static final int QR_CODE_HEIGHT = 200;
 
+    //Weather forecast constants
+    public static final String CURRENT_TEMP = "TEMP";
+    public static final int NUM_DAYS = 7;
 }

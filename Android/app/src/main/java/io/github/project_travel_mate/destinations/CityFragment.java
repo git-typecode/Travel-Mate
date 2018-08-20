@@ -21,15 +21,18 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.ProgressBar;
+
 import com.airbnb.lottie.LottieAnimationView;
 import com.miguelcatalan.materialsearchview.MaterialSearchView;
+
 import org.json.JSONArray;
 import org.json.JSONException;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import flipviewpager.utils.FlipSettings;
@@ -54,6 +57,8 @@ public class CityFragment extends Fragment implements TravelmateSnackbars {
     ListView lv;
 
     private MaterialSearchView mMaterialSearchView;
+    private final int[] mColors = {R.color.sienna, R.color.saffron, R.color.green, R.color.pink,
+            R.color.orange, R.color.blue, R.color.grey, R.color.yellow, R.color.purple, R.color.peach};
 
     private String mNameyet;
     private Activity mActivity;
@@ -159,7 +164,9 @@ public class CityFragment extends Fragment implements TravelmateSnackbars {
                                         arr.getJSONObject(i).getString("image"),
                                         arr.getJSONObject(i).getString("city_name"),
                                         arr.getJSONObject(i).getInt("facts_count"),
-                                        "Know More", "View on Map", "Fun Facts", "City Trends"));
+                                        R.color.sienna,
+                                        getString(R.string.interest_know_more), getString(R.string.interest_weather),
+                                        getString(R.string.interest_fun_facts), getString(R.string.interest_trends)));
                                 citynames.add(arr.getJSONObject(i).getString("city_name"));
                             } catch (JSONException e) {
                                 e.printStackTrace();
@@ -227,7 +234,12 @@ public class CityFragment extends Fragment implements TravelmateSnackbars {
                                         ar.getJSONObject(i).optString("image"),
                                         ar.getJSONObject(i).getString("city_name"),
                                         ar.getJSONObject(i).getInt("facts_count"),
-                                        "Know More", "View on Map", "Fun Facts", "City Trends"));
+                                        mColors[i],
+                                        mActivity.getApplicationContext().getString(R.string.interest_know_more),
+                                        mActivity.getApplicationContext().getString(R.string.interest_weather),
+                                        mActivity.getApplicationContext().getString(R.string.interest_fun_facts),
+                                        mActivity.getApplicationContext().getString(R.string.interest_trends)));
+
                             }
 
                             lv.setAdapter(new CityAdapter(mActivity, cities, settings));
@@ -263,4 +275,5 @@ public class CityFragment extends Fragment implements TravelmateSnackbars {
         animationView.setAnimation(R.raw.network_lost);
         animationView.playAnimation();
     }
+
 }

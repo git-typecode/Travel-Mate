@@ -3,25 +3,21 @@ package io.github.project_travel_mate.utilities;
 import android.app.Activity;
 import android.graphics.Paint;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import com.rey.material.widget.CheckBox;
+import android.widget.CheckBox;
 
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-
 import io.github.project_travel_mate.R;
 import io.github.project_travel_mate.roompersistence.ChecklistViewModel;
-
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
-
 import objects.ChecklistItem;
 
 class ChecklistAdapter extends ArrayAdapter<ChecklistItem> {
@@ -40,7 +36,6 @@ class ChecklistAdapter extends ArrayAdapter<ChecklistItem> {
 
     @Override
     public int getCount() {
-        Log.e("Adapter", "size of list is " + mItems.size());
         return mItems.size();
     }
 
@@ -48,7 +43,6 @@ class ChecklistAdapter extends ArrayAdapter<ChecklistItem> {
     @Override
     public View getView(final int position, View view, @NonNull ViewGroup parent) {
 
-        Log.e("adapter", "inside get view");
         LayoutInflater inflater = mContext.getLayoutInflater();
         ViewHolder holder;
         if (view == null) {

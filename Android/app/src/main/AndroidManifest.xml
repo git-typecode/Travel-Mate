@@ -1,8 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- suppress ALL -->
+<?xml version="1.0" encoding="utf-8"?><!-- suppress ALL -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.github.project_travel_mate"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="io.github.project_travel_mate">
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature
@@ -35,16 +34,15 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:replace="android:fullBackupContent">
-
         <activity
             android:name=".mytrips.TripImageActivity"
             android:configChanges="orientation|screenSize"
             android:theme="@style/AppTheme" />
-
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppThemeNoBar">
+            android:theme="@style/AppThemeNoBar"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -57,17 +55,16 @@
                 <data android:pathPattern=".*" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="com.gun0912.tedpicker.ImagePickerActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme_picker" />
 
-        <service android:name=".LocationService" android:enabled="true" />
-        <service android:name="utils.GPSTracker" android:enabled="true" />
+        <service
+            android:name="utils.GPSTracker"
+            android:enabled="true" />
+
         <activity
             android:name=".utilities.ChecklistActivity"
             android:label="@string/title_activity_select_city"
             android:theme="@style/AppTheme_picker" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDay6Qbk3MQD4Z80MH_HnR36TJGTrd2Ddc" />
@@ -84,7 +81,7 @@
             android:label="@string/title_activity_hotels"
             android:theme="@style/AppTheme_picker" />
         <activity
-            android:name=".travel.MapRealTimeActivity"
+            android:name=".travel.MapViewRealTimeActivity"
             android:label="@string/title_activity_map"
             android:theme="@style/AppTheme_picker" />
         <activity
@@ -96,7 +93,9 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <meta-data android:name="android.app.shortcuts"
+
+            <meta-data
+                android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
         <activity
@@ -113,7 +112,7 @@
         <activity android:name=".mytrips.AddNewTripActivity" />
         <activity
             android:name=".mytrips.MyTripInfoActivity"
-            android:windowSoftInputMode="stateHidden"/>
+            android:windowSoftInputMode="stateHidden" />
         <activity android:name=".destinations.description.TweetsActivity" />
 
         <provider
@@ -127,8 +126,29 @@
         </provider>
 
         <activity android:name=".ProfileActivity" />
-        <activity android:name=".mytrips.FriendsProfileActivity"/>
+        <activity android:name=".friend.FriendsProfileActivity" />
         <activity android:name=".notifications.NotificationsActivity" />
+        <activity
+            android:name=".FullScreenImage"
+            android:theme="@style/FullProfileImageTheme" />
+        <activity android:name=".utilities.WeatherForecastActivity" />
+        <activity android:name=".destinations.description.WeatherActivity" />
+    
+       
+        <activity android:name=".destinations.description.CityHistoryActivity"/>
+        <activity android:name=".travel.ListViewRealTimeActivity" />
+        <activity android:name=".destinations.description.RestaurantsActivity" />
+        <activity android:name=".destinations.description.TweetsDescriptionActivity" />
+        <activity android:name="com.theartofdev.edmodo.cropper.CropImageActivity" />
+        <activity android:name=".DeleteProfilePictureActivity"
+            android:icon="@drawable/ic_delete_round"
+            android:label="@string/remove_photo"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.DELETE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

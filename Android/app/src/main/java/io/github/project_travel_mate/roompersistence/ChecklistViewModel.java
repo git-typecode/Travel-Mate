@@ -1,9 +1,12 @@
 package io.github.project_travel_mate.roompersistence;
 
 import android.arch.lifecycle.ViewModel;
+
 import java.util.List;
+
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import io.reactivex.Single;
 import objects.ChecklistItem;
 
 /**
@@ -23,20 +26,23 @@ public class ChecklistViewModel extends ViewModel {
     }
 
     public Completable updateIsDone(final int id) {
-        return Completable.fromAction(() -> {
-            mDataSource.updateIsDone(id);
-        });
+        return Completable.fromAction(() -> mDataSource.updateIsDone(id));
     }
 
     public Completable updateUndone(final int id) {
-        return Completable.fromAction(() -> {
-            mDataSource.updateUndone(id);
-        });
+        return Completable.fromAction(() -> mDataSource.updateUndone(id));
     }
 
     public Completable insertItem(ChecklistItem item) {
-        return Completable.fromAction(() -> {
-            mDataSource.insertItem(item);
-        });
+        return Completable.fromAction(() -> mDataSource.insertItem(item));
+    }
+
+    public Completable deleteCompletedTasks() {
+        return Completable.fromAction(mDataSource::deleteCompletedTasks);
+    }
+
+    public Single<List<ChecklistItem>> getCompletedItems() {
+        return mDataSource.getCompletedItems();
+
     }
 }

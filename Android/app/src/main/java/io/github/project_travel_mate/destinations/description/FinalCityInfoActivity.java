@@ -12,14 +12,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.airbnb.lottie.LottieAnimationView;
-import com.ms.square.android.expandabletextview.ExpandableTextView;
 import com.squareup.picasso.Picasso;
 
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Timer;
@@ -30,10 +33,12 @@ import butterknife.ButterKnife;
 import io.github.project_travel_mate.R;
 import io.github.project_travel_mate.destinations.funfacts.FunFactsActivity;
 import objects.City;
+import utils.ExpandableTextView;
 
 import static utils.Constants.EXTRA_MESSAGE_CITY_OBJECT;
 import static utils.Constants.EXTRA_MESSAGE_TYPE;
 import static utils.Constants.USER_TOKEN;
+import static utils.WeatherUtils.fetchDrawableFileResource;
 
 /**
  * Fetch city information for given city mId
@@ -46,39 +51,48 @@ public class FinalCityInfoActivity extends AppCompatActivity
     @BindView(R.id.animation_view)
     LottieAnimationView animationView;
     @BindView(R.id.temp)
-    TextView temp;
+    TextView temperature;
     @BindView(R.id.humidit)
     TextView humidity;
     @BindView(R.id.weatherinfo)
-    TextView weatherinfo;
+    TextView weatherInfo;
     @BindView(R.id.head)
     TextView title;
     @BindView(R.id.image_slider)
     ViewPager imagesSliderView;
     @BindView(R.id.icon)
-    ImageView ico;
+    ImageView icon;
+    @BindView(R.id.expand_collapse)
+    ImageButton expandCollapseImage;
     @BindView(R.id.expand_text_view)
-    ExpandableTextView des;
+    ExpandableTextView cityDescription;
     @BindView(R.id.funfact)
     LinearLayout funfact;
     @BindView(R.id.restau)
-    LinearLayout restau;
+    LinearLayout restaurant;
     @BindView(R.id.hangout)
     LinearLayout hangout;
     @BindView(R.id.monu)
-    LinearLayout monum;
+    LinearLayout monument;
     @BindView(R.id.shoppp)
-    LinearLayout shopp;
+    LinearLayout shopping;
     @BindView(R.id.trends)
     LinearLayout trend;
+    @BindView(R.id.weather)
+    LinearLayout weather;
+    @BindView(R.id.city_history)
+    LinearLayout cityHistory;
     @BindView(R.id.SliderDots)
-    LinearLayout sliderDotspanel;
+    LinearLayout sliderDotsPanel;
+
     private int mDotsCount;
     private ImageView[] mDots;
     private Handler mHandler;
     private City mCity;
     private String mToken;
     private FinalCityInfoPresenter mFinalCityInfoPresenter;
+    private String mCurrentTemp;
+    private boolean mIsExpandClicked = false;
     int currentPage = 0;
     Timer timer;
 
@@ -130,11 +144,15 @@ public class FinalCityInfoActivity extends AppCompatActivity
 
     private void setClickListeners() {
         funfact.setOnClickListener(this);
-        restau.setOnClickListener(this);
+        restaurant.setOnClickListener(this);
         hangout.setOnClickListener(this);
-        monum.setOnClickListener(this);
-        shopp.setOnClickListener(this);
+        monument.setOnClickListener(this);
+        shopping.setOnClickListener(this);
         trend.setOnClickListener(this);
+        weather.setOnClickListener(this);
+        expandCollapseImage.setOnClickListener(this);
+        cityDescription.setOnClickListener(this);
+        cityHistory.setOnClickListener(this);
     }
 
     @Override
@@ -143,7 +161,6 @@ public class FinalCityInfoActivity extends AppCompatActivity
             finish();
         return super.onOptionsItemSelected(item);
     }
-
 
     @Override
     public void onClick(View v) {
@@ -154,7 +171,7 @@ public class FinalCityInfoActivity extends AppCompatActivity
                 startActivity(intent);
                 break;
             case R.id.restau:
-                fireIntent(PlacesOnMapActivity.getStartIntent(FinalCityInfoActivity.this), "restaurant");
+                fireIntent(RestaurantsActivity.getStartIntent(FinalCityInfoActivity.this), "restaurant");
                 break;
             case R.id.hangout:
                 fireIntent(PlacesOnMapActivity.getStartIntent(FinalCityInfoActivity.this), "hangout");
@@ -167,6 +184,21 @@ public class FinalCityInfoActivity extends AppCompatActivity
                 break;
             case R.id.trends:
                 intent = TweetsActivity.getStartIntent(FinalCityInfoActivity.this, mCity);
+                startActivity(intent);
+                break;
+            case R.id.weather:
+                //pass current temperature to weather activity
+                intent = WeatherActivity.getStartIntent(FinalCityInfoActivity.this, mCity, mCurrentTemp);
+                startActivity(intent);
+                break;
+            case R.id.expand_collapse :
+            case R.id.expand_text_view :
+                cityDescription.handleExpansion(mIsExpandClicked);
+                mIsExpandClicked = !mIsExpandClicked;
+                changeIcon();
+                break;
+            case R.id.city_history :
+                intent = CityHistoryActivity.getStartIntent(FinalCityInfoActivity.this, mCity);
                 startActivity(intent);
                 break;
         }
@@ -208,15 +240,27 @@ public class FinalCityInfoActivity extends AppCompatActivity
      */
     @Override
     public void parseResult(final String iconUrl,
+                            final int code,
                             final String tempText,
                             final String humidityText,
                             final String weatherDescription) {
         mHandler.post(() -> {
+            mCurrentTemp = tempText;
             content.setVisibility(View.VISIBLE);
-            Picasso.with(FinalCityInfoActivity.this).load(iconUrl).into(ico);
-            temp.setText(tempText);
+            int id = 0;
+            try {
+                id = fetchDrawableFileResource(FinalCityInfoActivity.this, iconUrl, code);
+            } catch (JSONException | IOException e) {
+                e.printStackTrace();
+            }
+            if (id == 0) {
+                Picasso.with(FinalCityInfoActivity.this).load(iconUrl).into(icon);
+            } else {
+                icon.setImageResource(id);
+            }
+            temperature.setText(tempText);
             humidity.setText(String.format(getString(R.string.humidity), humidityText));
-            weatherinfo.setText(weatherDescription);
+            weatherInfo.setText(weatherDescription);
         });
     }
 
@@ -225,10 +269,10 @@ public class FinalCityInfoActivity extends AppCompatActivity
      * request to fetch city information comes back successfully
      * used to display the fetched information from backend on activity
      *
-     * @param description               city description
-     * @param latitude                  city latitude
-     * @param longitude                 city longitude
-     * @param imagesArray               images array for the city
+     * @param description city description
+     * @param latitude    city latitude
+     * @param longitude   city longitude
+     * @param imagesArray images array for the city
      */
     @Override
     public void parseInfoResult(final String description,
@@ -240,7 +284,7 @@ public class FinalCityInfoActivity extends AppCompatActivity
             animationView.setVisibility(View.GONE);
             content.setVisibility(View.VISIBLE);
             if (description != null && !description.equals("null"))
-                des.setText(description);
+                cityDescription.setText(description);
             mCity.setDescription(description);
             mCity.setLatitude(latitude);
             mCity.setLongitude(longitude);
@@ -254,12 +298,12 @@ public class FinalCityInfoActivity extends AppCompatActivity
      * @param imagesArray array of images url
      */
     public void slideImages(ArrayList<String> imagesArray) {
-        CityImageSliderAdapter adapter = new CityImageSliderAdapter(this, imagesArray);
+        CityImageSliderAdapter adapter = new CityImageSliderAdapter(this, imagesArray, mCity.getNickname());
         imagesSliderView.setAdapter(adapter);
         mDotsCount = adapter.getCount();
         mDots = new ImageView[mDotsCount];
         if (mDotsCount == 1) {
-            sliderDotspanel.setVisibility(View.INVISIBLE);
+            sliderDotsPanel.setVisibility(View.INVISIBLE);
         }
 
         for (int i = 0; i < mDotsCount; i++) {
@@ -270,7 +314,7 @@ public class FinalCityInfoActivity extends AppCompatActivity
                     .LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 
             params.setMargins(8, 0, 8, 0);
-            sliderDotspanel.addView(mDots[i], params);
+            sliderDotsPanel.addView(mDots[i], params);
         }
         mDots[0].setImageDrawable(getResources().getDrawable(R.drawable.active_dot));
 
@@ -286,14 +330,42 @@ public class FinalCityInfoActivity extends AppCompatActivity
             imagesSliderView.setCurrentItem(currentPage++, true);
         };
 
+        //for activating dots on manual swapping of images
+        imagesSliderView.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+               //required method
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                for (int i = 0; i < mDotsCount; i++)
+                    mDots[i].setImageDrawable(getResources().getDrawable(R.drawable.non_active_dot));
+                mDots[position].setImageDrawable(getResources().getDrawable(R.drawable.active_dot));
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+                //required method
+            }
+        });
         timer = new Timer();
         timer.schedule(new TimerTask() {
-
             @Override
             public void run() {
                 handler.post(Update);
             }
-        }, 500, 2000);
+        }, 500, 3000);
+    }
+
+    /**
+     * Changes icon of up/down arrow based on its clicking
+     */
+    private void changeIcon() {
+        if (mIsExpandClicked)
+            expandCollapseImage.setImageDrawable(getDrawable(R.drawable.ic_keyboard_arrow_up_black_24dp));
+        else
+            expandCollapseImage.setImageDrawable(getDrawable(R.drawable.ic_keyboard_arrow_down_black_24dp));
     }
 
     /**

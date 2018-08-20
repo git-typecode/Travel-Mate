@@ -40,9 +40,9 @@ import java.io.IOException;
 import java.util.Objects;
 
 import io.github.project_travel_mate.destinations.CityFragment;
+import io.github.project_travel_mate.friend.FriendsProfileActivity;
+import io.github.project_travel_mate.friend.MyFriendsFragment;
 import io.github.project_travel_mate.login.LoginActivity;
-import io.github.project_travel_mate.medals.MedalsFragment;
-import io.github.project_travel_mate.mytrips.FriendsProfileActivity;
 import io.github.project_travel_mate.mytrips.MyTripsFragment;
 import io.github.project_travel_mate.notifications.NotificationsActivity;
 import io.github.project_travel_mate.travel.TravelFragment;
@@ -134,15 +134,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         fillNavigationView(emailId, null);
 
         getProfileInfo();
-        if (travelShortcut.equals(getIntent().getAction())) {
-            fragment = TravelFragment.newInstance();
-            fragmentManager.beginTransaction().replace(R.id.inc, fragment).commit();
-        } else if (myTripsShortcut.equals(getIntent().getAction())) {
-            fragment = MyTripsFragment.newInstance();
-            fragmentManager.beginTransaction().replace(R.id.inc, fragment).commit();
-        } else if (utilitiesShortcut.equals(getIntent().getAction())) {
-            fragment = UtilitiesFragment.newInstance();
-            fragmentManager.beginTransaction().replace(R.id.inc, fragment).commit();
+        if (getIntent() != null && getIntent().getAction() != null) {
+            switch (getIntent().getAction()) {
+                case travelShortcut:
+                    fragment = TravelFragment.newInstance();
+                    fragmentManager.beginTransaction().replace(R.id.inc, fragment).commit();
+                    break;
+                case myTripsShortcut:
+                    fragment = MyTripsFragment.newInstance();
+                    fragmentManager.beginTransaction().replace(R.id.inc, fragment).commit();
+                    break;
+                case utilitiesShortcut:
+                    fragment = UtilitiesFragment.newInstance();
+                    fragmentManager.beginTransaction().replace(R.id.inc, fragment).commit();
+                    break;
+            }
         }
     }
 
@@ -187,10 +193,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 fragment = UtilitiesFragment.newInstance();
                 break;
 
-            case R.id.nav_medals:
-                fragment = MedalsFragment.newInstance();
-                break;
-
             case R.id.nav_about_us:
                 fragment = AboutUsFragment.newInstance();
                 break;
@@ -219,10 +221,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 break;
             }
 
-            case R.id.nav_myfriends : {
+            case R.id.nav_myfriends :
                 fragment = MyFriendsFragment.newInstance();
                 break;
-            }
+            case R.id.nav_settings :
+                fragment = SettingsFragment.newInstance();
+                break;
         }
 
         if (fragment != null) {

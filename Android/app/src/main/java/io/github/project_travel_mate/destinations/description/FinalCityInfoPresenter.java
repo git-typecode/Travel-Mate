@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
 
-import io.github.project_travel_mate.R;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
@@ -68,6 +67,7 @@ class FinalCityInfoPresenter {
                         JSONObject responseObject = new JSONObject(res);
                         mFinalCityInfoView.parseResult(
                                 responseObject.getString("icon"),
+                                responseObject.getInt("code"),
                                 responseObject.getString("temp") +
                                         (char) 0x00B0 + responseObject.getString("temp_units"),
                                 responseObject.getString("humidity") + " " + responseObject.getString("humidity_units"),
