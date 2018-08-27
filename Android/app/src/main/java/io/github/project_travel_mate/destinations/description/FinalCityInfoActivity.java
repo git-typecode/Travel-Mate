@@ -9,10 +9,9 @@ import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
+import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -24,7 +23,6 @@ import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -33,7 +31,6 @@ import butterknife.ButterKnife;
 import io.github.project_travel_mate.R;
 import io.github.project_travel_mate.destinations.funfacts.FunFactsActivity;
 import objects.City;
-import utils.ExpandableTextView;
 
 import static utils.Constants.EXTRA_MESSAGE_CITY_OBJECT;
 import static utils.Constants.EXTRA_MESSAGE_TYPE;
@@ -56,16 +53,10 @@ public class FinalCityInfoActivity extends AppCompatActivity
     TextView humidity;
     @BindView(R.id.weatherinfo)
     TextView weatherInfo;
-    @BindView(R.id.head)
-    TextView title;
     @BindView(R.id.image_slider)
     ViewPager imagesSliderView;
     @BindView(R.id.icon)
     ImageView icon;
-    @BindView(R.id.expand_collapse)
-    ImageButton expandCollapseImage;
-    @BindView(R.id.expand_text_view)
-    ExpandableTextView cityDescription;
     @BindView(R.id.funfact)
     LinearLayout funfact;
     @BindView(R.id.restau)
@@ -82,8 +73,12 @@ public class FinalCityInfoActivity extends AppCompatActivity
     LinearLayout weather;
     @BindView(R.id.city_history)
     LinearLayout cityHistory;
+    @BindView(R.id.city_history_text)
+    TextView cityHistoryText;
     @BindView(R.id.SliderDots)
     LinearLayout sliderDotsPanel;
+    @BindView(R.id.is_visited)
+    LinearLayout cityVisitedLayout;
 
     private int mDotsCount;
     private ImageView[] mDots;
@@ -92,14 +87,13 @@ public class FinalCityInfoActivity extends AppCompatActivity
     private String mToken;
     private FinalCityInfoPresenter mFinalCityInfoPresenter;
     private String mCurrentTemp;
-    private boolean mIsExpandClicked = false;
     int currentPage = 0;
     Timer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_final_city_info);
+        setContentView(R.layout.activity_city_info);
         ButterKnife.bind(this);
 
         mFinalCityInfoPresenter = new FinalCityInfoPresenter();
@@ -130,14 +124,18 @@ public class FinalCityInfoActivity extends AppCompatActivity
     private void initUi() {
 
         setTitle(mCity.getNickname());
-        title.setText(mCity.getNickname());
+        cityHistoryText.setText(String.format(getString(R.string.know_more_about),
+                mCity.getNickname()));
 
         if (mCity.getFunFactsCount() < 1) {
             funfact.setVisibility(View.GONE);
         }
 
-        Objects.requireNonNull(getSupportActionBar()).setHomeButtonEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        content.setVisibility(View.GONE);
+        cityVisitedLayout.setVisibility(View.GONE);
 
         setClickListeners();
     }
@@ -150,8 +148,6 @@ public class FinalCityInfoActivity extends AppCompatActivity
         shopping.setOnClickListener(this);
         trend.setOnClickListener(this);
         weather.setOnClickListener(this);
-        expandCollapseImage.setOnClickListener(this);
-        cityDescription.setOnClickListener(this);
         cityHistory.setOnClickListener(this);
     }
 
@@ -190,12 +186,6 @@ public class FinalCityInfoActivity extends AppCompatActivity
                 //pass current temperature to weather activity
                 intent = WeatherActivity.getStartIntent(FinalCityInfoActivity.this, mCity, mCurrentTemp);
                 startActivity(intent);
-                break;
-            case R.id.expand_collapse :
-            case R.id.expand_text_view :
-                cityDescription.handleExpansion(mIsExpandClicked);
-                mIsExpandClicked = !mIsExpandClicked;
-                changeIcon();
                 break;
             case R.id.city_history :
                 intent = CityHistoryActivity.getStartIntent(FinalCityInfoActivity.this, mCity);
@@ -245,8 +235,8 @@ public class FinalCityInfoActivity extends AppCompatActivity
                             final String humidityText,
                             final String weatherDescription) {
         mHandler.post(() -> {
-            mCurrentTemp = tempText;
             content.setVisibility(View.VISIBLE);
+            mCurrentTemp = tempText;
             int id = 0;
             try {
                 id = fetchDrawableFileResource(FinalCityInfoActivity.this, iconUrl, code);
@@ -258,9 +248,11 @@ public class FinalCityInfoActivity extends AppCompatActivity
             } else {
                 icon.setImageResource(id);
             }
+            String text = weatherDescription.substring(0, 1).toUpperCase() +
+                    weatherDescription.substring(1);
             temperature.setText(tempText);
             humidity.setText(String.format(getString(R.string.humidity), humidityText));
-            weatherInfo.setText(weatherDescription);
+            weatherInfo.setText(text);
         });
     }
 
@@ -269,25 +261,22 @@ public class FinalCityInfoActivity extends AppCompatActivity
      * request to fetch city information comes back successfully
      * used to display the fetched information from backend on activity
      *
-     * @param description city description
      * @param latitude    city latitude
      * @param longitude   city longitude
+     * @param isCityVisited true, if city is visited
      * @param imagesArray images array for the city
      */
     @Override
-    public void parseInfoResult(final String description,
-                                final String latitude,
+    public void parseInfoResult(final String latitude,
                                 final String longitude,
+                                final Boolean isCityVisited,
                                 ArrayList<String> imagesArray) {
         mHandler.post(() -> {
-            Log.e("description", description + " ");
-            animationView.setVisibility(View.GONE);
             content.setVisibility(View.VISIBLE);
-            if (description != null && !description.equals("null"))
-                cityDescription.setText(description);
-            mCity.setDescription(description);
+            animationView.setVisibility(View.GONE);
             mCity.setLatitude(latitude);
             mCity.setLongitude(longitude);
+            cityVisitedLayout.setVisibility(View.VISIBLE);
             if (imagesArray.size() > 0)
                 slideImages(imagesArray);
         });
@@ -356,16 +345,6 @@ public class FinalCityInfoActivity extends AppCompatActivity
                 handler.post(Update);
             }
         }, 500, 3000);
-    }
-
-    /**
-     * Changes icon of up/down arrow based on its clicking
-     */
-    private void changeIcon() {
-        if (mIsExpandClicked)
-            expandCollapseImage.setImageDrawable(getDrawable(R.drawable.ic_keyboard_arrow_up_black_24dp));
-        else
-            expandCollapseImage.setImageDrawable(getDrawable(R.drawable.ic_keyboard_arrow_down_black_24dp));
     }
 
     /**
